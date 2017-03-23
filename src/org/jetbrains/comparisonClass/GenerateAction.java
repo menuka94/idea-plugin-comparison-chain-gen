@@ -9,7 +9,6 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.util.PsiTreeUtil;
-import net.miginfocom.layout.PlatformDefaults;
 
 /**
  * Created by menuka on 3/23/17.
@@ -18,18 +17,27 @@ public class GenerateAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
-        // TODO: insert action logic here
+        PsiClass psiClass = getPsiClassFromContext(e);
+        GenerateDialog dlg = new GenerateDialog(psiClass);
+        dlg.show();
+
     }
 
     @Override
     public void update(AnActionEvent e) {
+        PsiClass psiClass = getPsiClassFromContext(e);
+        e.getPresentation().setEnabled(psiClass != null);
+    }
+
+    private PsiClass getPsiClassFromContext(AnActionEvent e) {
         PsiFile psiFile = e.getData(LangDataKeys.PSI_FILE);
         Editor editor = e.getData(PlatformDataKeys.EDITOR);
 
         if(psiFile == null || editor == null){
             e.getPresentation().setEnabled(false);
-            return;
+            return null;
         }
+
         int offset = editor.getCaretModel().getOffset();
         PsiElement elementAt = psiFile.findElementAt(offset);
 
@@ -37,5 +45,7 @@ public class GenerateAction extends AnAction {
         if(psiClass == null){
             e.getPresentation().setEnabled(false);
         }
+
+        return psiClass;
     }
 }
