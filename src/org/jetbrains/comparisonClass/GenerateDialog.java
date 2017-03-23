@@ -11,6 +11,7 @@ import com.intellij.ui.components.JBList;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import java.util.List;
 
 /**
  * Created by menuka on 3/23/17.
@@ -39,5 +40,9 @@ public class GenerateDialog extends DialogWrapper {
     @Override
     protected JComponent createCenterPanel() {
         return component;
+    }
+
+    public List<PsiField> getFields() {
+        return myFields.getItems();
     }
 }
