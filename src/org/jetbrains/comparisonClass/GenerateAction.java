@@ -1,6 +1,5 @@
 package org.jetbrains.comparisonClass;
 
-import a.f.b.a.S;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.LangDataKeys;
@@ -8,6 +7,7 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.psi.*;
+import com.intellij.psi.codeStyle.JavaCodeStyleManager;
 import com.intellij.psi.util.PsiTreeUtil;
 
 import java.util.List;
@@ -28,23 +28,46 @@ public class GenerateAction extends AnAction {
 
     }
 
-    private void generateCompareTo(PsiClass psiClass, List<PsiField> fields) {
+    private void generateComparable(PsiClass psiClass, List<PsiField> fields) {
         new WriteCommandAction.Simple(psiClass.getProject(), psiClass.getContainingFile()){
             @Override
             protected void run() throws Throwable {
-                StringBuilder builder = new StringBuilder("public int compareTo(");
-                builder.append(psiClass.getName()).append(" that) {\n");
-                builder.append("return com.google.com.common.collect.ComparisonChain.start()");
-                for(PsiField field: fields){
-                    builder.append(".compareTo(this.").append(field.getName()).append(", that.");
-                    builder.append(field.getName()).append(")");
-                }
-                builder.append(".result();\n}");
-                PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(getProject());
-                PsiMethod compareTo = elementFactory.createMethodFromText(builder.toString(), psiClass);
-                psiClass.add(compareTo);
+                generateCompareTo(psiClass, fields);
+                generateImplementsComparable(psiClass);
             }
+
+
         }.execute();
+    }
+
+    private void generateImplementsComparable(PsiClass psiClass) {
+        PsiClassType[] implementsListTypes = psiClass.getImplementsListTypes();
+        for(PsiClassType implementListType: implementsListTypes){
+            PsiClass resolved = implementListType.resolve();
+            if(resolved != null && "java.lang.Comparable".equals(resolved.getQualifiedName())) {
+                return;
+            }
+
+        String implementsType = "Comparable<" + psiClass.getName() + ">";
+            PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(psiClass.getProject());
+            PsiJavaCodeReferenceElement referenceElement = elementFactory.createReferenceFromText(implementsType, psiClass);
+            psiClass.getImplementsList().add(referenceElement);
+        }
+    }
+
+    private void generateCompareTo(PsiClass psiClass, List<PsiField> fields) {
+        StringBuilder builder = new StringBuilder("public int compareTo(");
+        builder.append(psiClass.getName()).append(" that) {\n");
+        builder.append("return com.google.com.common.collect.ComparisonChain.start()");
+        for(PsiField field: fields){
+            builder.append(".compareTo(this.").append(field.getName()).append(", that.");
+            builder.append(field.getName()).append(")");
+        }
+        builder.append(".result();\n}");
+        PsiElementFactory elementFactory = JavaPsiFacade.getElementFactory(psiClass.getProject());
+        PsiMethod compareTo = elementFactory.createMethodFromText(builder.toString(), psiClass);
+        PsiElement method = psiClass.add(compareTo);
+        JavaCodeStyleManager.getInstance(psiClass.getProject()).shortenClassReferences(method);
     }
 
     @Override
