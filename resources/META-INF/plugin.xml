@@ -30,6 +30,10 @@
 
   <actions>
     <!-- Add your actions here -->
+    <action id="generateComparisonChain" class="org.jetbrains.comparisonClass.GenerateAction" text="ComparisonChain"
+            description="Generates an implmentation of compareTo() using Guava ComparisonChain">
+      <add-to-group group-id="GenerateGroup" anchor="last"/>
+    </action>
   </actions>
 
 </idea-plugin>
